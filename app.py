@@ -3,7 +3,7 @@ from flask_cors import CORS
 import sqlite3, os, uuid, io, zipfile
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-import pandas as pd
+from openpyxl import load_workbook
 from PIL import Image, ImageDraw, ImageFont
 
 app = Flask(__name__)
@@ -37,7 +37,7 @@ def signup():
                     (uid, d['name'], d['email'], generate_password_hash(d['password']), d.get('phone',''), 'trial', datetime.now().isoformat()))
         conn.commit()
         return jsonify({'ok':True, 'user':{'id':uid,'name':d['name'],'email':d['email'],'plan':'trial'}})
-    except Exception as e:
+    except:
         return jsonify({'ok':False,'error':'Email exists'}), 400
     finally: conn.close()
 
@@ -56,29 +56,31 @@ def login():
 def parse_excel():
     f = request.files['file']
     try:
-        df = pd.read_excel(f, header=None)
+        wb = load_workbook(f, data_only=True)
+        ws = wb.active
+        rows = list(ws.iter_rows(values_only=True))
         header_idx = 0
-        for i in range(min(10, len(df))):
-            row = df.iloc[i].astype(str).str.lower()
-            if row.str.contains('name').any() and (row.str.contains('no').any() or row.str.contains('number').any()):
+        for i, row in enumerate(rows[:10]):
+            vals = [str(c).lower() if c else '' for c in row]
+            if any('name' in v for v in vals) and any('no' in v or 'number' in v for v in vals):
                 header_idx = i; break
-        df2 = pd.read_excel(f, header=header_idx)
-        df2.columns = [str(c).strip().lower() for c in df2.columns]
+        headers = [str(c).strip().lower() if c else '' for c in rows[header_idx]]
         def find(names):
             for n in names:
-                for c in df2.columns:
-                    if n in c.replace(' ',''):
-                        return c
+                for idx,h in enumerate(headers):
+                    if n in h.replace(' ',''):
+                        return idx
             return None
         ncol = find(['name','player','fullname'])
         numcol = find(['number','no','jersey','num'])
         scol = find(['size','chest','sz'])
         players = []
-        for _,row in df2.iterrows():
-            name = str(row.get(ncol,'')).strip()
-            num = str(row.get(numcol,'')).strip()
-            size = str(row.get(scol,'')).strip()
-            if name and num and name.lower()!='nan':
+        for row in rows[header_idx+1:]:
+            if not row: continue
+            name = str(row[ncol] if ncol is not None and ncol < len(row) and row[ncol] else '').strip()
+            num = str(row[numcol] if numcol is not None and numcol < len(row) and row[numcol] else '').strip()
+            size = str(row[scol] if scol is not None and scol < len(row) and row[scol] else '').strip()
+            if name and num and name.lower()!='none':
                 players.append({'name':name.upper(),'number':num,'size':size})
         return jsonify({'ok':True,'players':players})
     except Exception as e:
