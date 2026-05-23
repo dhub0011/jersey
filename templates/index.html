@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bupreme v7 — Jersey PDF Generator Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','ui-sans-serif']},colors:{bupreme:'#0ea5e9'}}}}</script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { font-family: 'Inter', sans-serif; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0a0e14; }
+::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #374151; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; animation: fade .3s ease; }
+@keyframes fade { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+.toast { animation: slide .3s ease; }
+@keyframes slide { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+</style>
+</head>
+<body class="bg-[#0a0e14] text-gray-100 min-h-screen antialiased selection:bg-blue-500/30">
+
+<div id="toastContainer" class="fixed top-4 right-4 z-[200] space-y-2 w-80"></div>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#0a0e14] to-[#0a0e14]">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 shadow-xl shadow-blue-900/40 mb-5 ring-1 ring-white/10">
+        <i class="ri-shirt-line text-3xl text-white"></i>
+      </div>
+      <h1 class="text-[32px] font-extrabold tracking-tight">Bupreme v7</h1>
+      <p class="text-gray-400 mt-1.5">Jersey PDF Generator Pro</p>
+    </div>
+    <div class="bg-[#0f141c]/80 backdrop-blur-2xl border border-white/10 rounded-[24px] p-8 shadow-2xl">
+      <form id="loginForm" class="space-y-5">
+        <div>
+          <label class="text-sm text-gray-300 mb-1.5 block">Email</label>
+          <div class="relative">
+            <i class="ri-mail-line absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input id="email" type="email" required autocomplete="email" class="w-full bg-[#080b11] border border-white/10 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="you@company.com">
+          </div>
+        </div>
+        <div>
+          <label class="text-sm text-gray-300 mb-1.5 block">Password</label>
+          <div class="relative">
+            <i class="ri-lock-2-line absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            <input id="password" type="password" required autocomplete="current-password" class="w-full bg-[#080b11] border border-white/10 rounded-xl pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition" placeholder="••••••••">
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 font-semibold py-3.5 rounded-xl transition shadow-lg shadow-blue-900/30 hover:shadow-blue-800/40 active:scale-[0.99]">Sign In</button>
+      </form>
+      <p class="text-[11px] text-gray-500 text-center mt-6">Secure access • v7.0.0</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden h-screen overflow-hidden">
+  <div class="flex h-full">
+    <aside id="sidebar" class="w-[260px] bg-[#080b11] border-r border-white/[0.06] flex flex-col shrink-0">
+      <div class="p-5 border-b border-white/[0.06]">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-900/30"><i class="ri-shirt-line text-white text-xl"></i></div>
+          <div><div class="font-bold leading-tight">Bupreme v7</div><div class="text-xs text-gray-500" id="sidebarSubtitle">Admin Console</div></div>
+        </div>
+      </div>
+      <nav class="flex-1 overflow-y-auto p-3">
+        <div id="navTabs" class="space-y-1"></div>
+      </nav>
+      <div class="p-3 border-t border-white/[0.06]">
+        <div class="px-3 py-2 mb-2 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+          <div class="text-[11px] text-gray-500">Signed in</div>
+          <div class="text-sm truncate" id="currentUserEmail">—</div>
+        </div>
+        <button id="logoutBtn" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/5 text-gray-400 text-sm flex items-center gap-2 transition"><i class="ri-logout-box-r-line"></i> Logout</button>
+      </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto bg-[#0a0e14] relative">
+      <div id="clientBanner" class="hidden sticky top-0 z-30 bg-gradient-to-r from-blue-950/80 to-cyan-950/60 backdrop-blur-xl border-b border-blue-900/30">
+        <div class="px-6 md:px-8 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center"><i class="ri-vip-diamond-line text-cyan-300"></i></div>
+            <div>
+              <div class="font-semibold leading-tight">Client Workspace</div>
+              <div class="text-xs text-cyan-200/70"><span id="clientName"></span> • Unlimited Mode</div>
+            </div>
+          </div>
+          <div class="text-[11px] text-white/40">Powered by Bupreme v7</div>
+        </div>
+      </div>
+
+      <div class="p-6 md:p-8 max-w-[1350px] mx-auto">
+
+        <!-- OVERVIEW -->
+        <div id="tab-overview" class="tab-pane">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-2xl font-bold">Overview</h2>
+              <p class="text-gray-400 text-sm mt-0.5">Production dashboard</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs border border-emerald-500/20">Live</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5"><div class="text-gray-400 text-xs mb-1">PDFs Generated</div><div class="text-3xl font-bold" id="statPDF">0</div><div class="text-xs text-emerald-400 mt-2 flex items-center gap-1"><i class="ri-arrow-up-s-line"></i> Today</div></div>
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5"><div class="text-gray-400 text-xs mb-1">Active Clients</div><div class="text-3xl font-bold" id="statClients">0</div><div class="text-xs text-gray-500 mt-2">White-label</div></div>
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5"><div class="text-gray-400 text-xs mb-1">Revenue (INR)</div><div class="text-3xl font-bold" id="statRevenue">₹0</div><div class="text-xs text-gray-500 mt-2">This month</div></div>
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5"><div class="text-gray-400 text-xs mb-1">Payments Pending</div><div class="text-3xl font-bold" id="statPending">0</div><div class="text-xs text-amber-400 mt-2">Awaiting verification</div></div>
+          </div>
+          <div class="grid lg:grid-cols-3 gap-4">
+            <div class="lg:col-span-2 bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="ri-flashlight-line text-blue-400"></i> Quick Actions</h3>
+              <div class="grid sm:grid-cols-3 gap-3">
+                <button data-goto="generator" class="goto-btn bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 text-left transition"><i class="ri-file-pdf-line text-xl text-blue-400"></i><div class="font-medium mt-2">New Batch</div><div class="text-xs text-gray-500">Generate PDFs</div></button>
+                <button data-goto="codes" class="goto-btn bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 text-left transition"><i class="ri-key-2-line text-xl text-violet-400"></i><div class="font-medium mt-2">Create Code</div><div class="text-xs text-gray-500">License keys</div></button>
+                <button data-goto="clients" class="goto-btn bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 text-left transition"><i class="ri-user-add-line text-xl text-cyan-400"></i><div class="font-medium mt-2">Add Client</div><div class="text-xs text-gray-500">White-label</div></button>
+              </div>
+            </div>
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold mb-3">System</h3>
+              <div class="space-y-2.5 text-sm">
+                <div class="flex justify-between"><span class="text-gray-400">Version</span><span>v7.0.0 FINAL</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">UPI ID</span><span class="font-mono text-xs">muhammerihan7775@oksbi</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Render Ready</span><span class="text-emerald-400">Yes</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GENERATOR -->
+        <div id="tab-generator" class="tab-pane">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-2xl font-bold">PDF Generator</h2>
+              <p class="text-gray-400 text-sm mt-0.5">Print-ready 300 DPI with blue stripes</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="selectAllFiles" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs border border-white/10">Select All</button>
+              <button id="clearAllFiles" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs border border-white/10">Clear All</button>
+            </div>
+          </div>
+
+          <div class="grid lg:grid-cols-3 gap-5">
+            <div class="lg:col-span-2 space-y-5">
+              <!-- Excel -->
+              <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+                <h3 class="font-semibold mb-3 flex items-center gap-2"><i class="ri-file-excel-2-line text-emerald-400"></i> Player Data (Excel/CSV)</h3>
+                <label class="block border-2 border-dashed border-white/10 hover:border-blue-500/50 rounded-xl p-6 text-center cursor-pointer transition bg-white/[0.02]">
+                  <input id="excelInput" type="file" accept=".xlsx,.xls,.csv" class="hidden">
+                  <i class="ri-upload-cloud-2-line text-3xl text-gray-500 mb-2"></i>
+                  <div class="font-medium">Drop Excel here or click to upload</div>
+                  <div class="text-xs text-gray-500 mt-1">Auto-detects header row with Name, Number, Size</div>
+                </label>
+                <div id="excelStatus" class="mt-3 text-xs text-gray-400 hidden"></div>
+              </div>
+
+              <!-- Templates -->
+              <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+                <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="ri-image-add-line text-blue-400"></i> Template Files (7 Slots)</h3>
+                <div id="fileGrid" class="grid sm:grid-cols-2 gap-3"></div>
+                <p class="text-[11px] text-gray-500 mt-3">PNG recommended • 300 DPI • Transparent background</p>
+              </div>
+
+              <!-- Players -->
+              <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                  <h3 class="font-semibold flex items-center gap-2"><i class="ri-team-line text-violet-400"></i> Players <span id="playerCount" class="ml-2 text-xs px-2 py-0.5 bg-white/10 rounded-full">0</span></h3>
+                  <button id="clearPlayers" class="text-xs text-gray-400 hover:text-white">Clear</button>
+                </div>
+                <div class="overflow-auto max-h-[260px] border border-white/5 rounded-xl">
+                  <table class="w-full text-sm">
+                    <thead class="bg-white/[0.03] sticky top-0"><tr class="text-left text-gray-400"><th class="px-3 py-2 font-medium">Name</th><th class="px-3 py-2 font-medium">Number</th><th class="px-3 py-2 font-medium">Size</th></tr></thead>
+                    <tbody id="playerTable" class="divide-y divide-white/5"></tbody>
+                  </table>
+                  <div id="emptyPlayers" class="py-10 text-center text-gray-500 text-sm">No data yet. Upload Excel.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-5">
+              <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5 sticky top-6">
+                <h3 class="font-semibold mb-4">Generate</h3>
+                <div class="space-y-3 text-sm">
+                  <div class="flex justify-between"><span class="text-gray-400">Templates selected</span><span id="tplCount" class="font-mono">0/7</span></div>
+                  <div class="flex justify-between"><span class="text-gray-400">Players loaded</span><span id="plyCount" class="font-mono">0</span></div>
+                  <div class="flex justify-between"><span class="text-gray-400">Output</span><span>ZIP + PDFs</span></div>
+                </div>
+                <button id="generateBtn" disabled class="w-full mt-5 bg-gradient-to-r from-blue-600 to-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed font-semibold py-3.5 rounded-xl shadow-lg shadow-blue-900/20 hover:shadow-blue-800/30 transition flex items-center justify-center gap-2">
+                  <i class="ri-flashlight-line"></i> <span id="generateText">Generate PDFs</span>
+                </button>
+                
+                <div id="downloadContainer" class="hidden">
+                  <button id="downloadZipBtn" class="w-full mt-3 bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-6 rounded-2xl text-[17px] flex items-center justify-center gap-3 shadow-lg shadow-green-900/30 transition active:scale-[0.99]">
+                    <i class="ri-download-2-fill text-2xl"></i> Download ZIP
+                  </button>
+                  <div class="text-center text-[11px] text-gray-500 mt-2">ZIP stored • Click to re-download anytime</div>
+                </div>
+
+                <div class="mt-5 pt-5 border-t border-white/5">
+                  <div class="text-xs text-gray-400 mb-2">Features</div>
+                  <ul class="text-[12px] space-y-1.5 text-gray-300">
+                    <li class="flex items-center gap-1.5"><i class="ri-check-line text-emerald-400"></i> Blue stripes (top/bottom)</li>
+                    <li class="flex items-center gap-1.5"><i class="ri-check-line text-emerald-400"></i> 300 DPI print-ready</li>
+                    <li class="flex items-center gap-1.5"><i class="ri-check-line text-emerald-400"></i> Size charts embedded</li>
+                    <li class="flex items-center gap-1.5"><i class="ri-check-line text-emerald-400"></i> Auto ZIP packaging</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CODES -->
+        <div id="tab-codes" class="tab-pane">
+          <h2 class="text-2xl font-bold mb-1">License Codes</h2>
+          <p class="text-gray-400 text-sm mb-6">Generate and manage access codes</p>
+          <div class="grid lg:grid-cols-3 gap-5">
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold mb-3">Create Code</h3>
+              <div class="space-y-3">
+                <select id="codePlan" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+                  <option value="trial">Trial - ₹0</option>
+                  <option value="1m">1 Month - ₹999</option>
+                  <option value="3m">3 Month - ₹2499</option>
+                  <option value="12m">12 Month - ₹7999</option>
+                  <option value="universal">Universal - ₹4999</option>
+                </select>
+                <input id="codeClient" placeholder="Client name (optional)" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+                <button id="createCodeBtn" class="w-full bg-violet-600 hover:bg-violet-500 font-medium py-2.5 rounded-xl text-sm">Generate Code</button>
+              </div>
+            <div class="lg:col-span-2 bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold mb-3">Active Codes</h3>
+              <div class="overflow-auto max-h-[360px]">
+                <table class="w-full text-sm">
+                  <thead class="text-gray-400 text-xs"><tr><th class="text-left py-2 px-2">Code</th><th class="text-left py-2 px-2">Plan</th><th class="text-left py-2 px-2">Client</th><th class="text-left py-2 px-2">Status</th></tr></thead>
+                  <tbody id="codesTable" class="divide-y divide-white/5"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAYMENTS -->
+        <div id="tab-payments" class="tab-pane">
+          <h2 class="text-2xl font-bold mb-1">Payments</h2>
+          <p class="text-gray-400 text-sm mb-6">UPI: muhammerihan7775@oksbi • Auto QR</p>
+          <div class="bg-[#0f141c] border border-white/5 rounded-2xl overflow-hidden">
+            <div class="overflow-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-white/[0.03] text-gray-400"><tr><th class="text-left px-4 py-3 font-medium">Date</th><th class="text-left px-4 py-3 font-medium">Plan</th><th class="text-left px-4 py-3 font-medium">Amount</th><th class="text-left px-4 py-3 font-medium">UTR</th><th class="text-left px-4 py-3 font-medium">Status</th><th class="text-left px-4 py-3 font-medium">Screenshot</th></tr></thead>
+                <tbody id="paymentsTable" class="divide-y divide-white/5"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- PLANS -->
+        <div id="tab-plans" class="tab-pane">
+          <h2 class="text-2xl font-bold mb-1">Pricing Plans</h2>
+          <p class="text-gray-400 text-sm mb-6">INR pricing • UPI payments only</p>
+          <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-[#0f141c] border border-white/10 rounded-2xl p-5 flex flex-col"><div class="text-sm text-gray-400">Trial</div><div class="text-3xl font-bold mt-1">₹0</div><ul class="text-xs text-gray-400 mt-4 space-y-1.5 flex-1"><li>• 10 PDFs</li><li>• Watermark</li></ul><button data-plan="Trial" data-amount="0" class="buyBtn mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-medium">Start Trial</button></div>
+            <div class="bg-[#0f141c] border border-blue-500/30 rounded-2xl p-5 flex flex-col ring-1 ring-blue-500/20"><div class="text-sm text-blue-400">1 Month</div><div class="text-3xl font-bold mt-1">₹999</div><ul class="text-xs text-gray-400 mt-4 space-y-1.5 flex-1"><li>• Unlimited PDFs</li><li>• All templates</li><li>• Email support</li></ul><button data-plan="1 Month" data-amount="999" class="buyBtn mt-4 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-semibold">Buy Now</button></div>
+            <div class="bg-[#0f141c] border border-white/10 rounded-2xl p-5 flex flex-col"><div class="text-sm text-gray-400">3 Month</div><div class="text-3xl font-bold mt-1">₹2,499</div><div class="text-[11px] text-emerald-400">Save 17%</div><ul class="text-xs text-gray-400 mt-3 space-y-1.5 flex-1"><li>• Unlimited PDFs</li><li>• Priority support</li></ul><button data-plan="3 Month" data-amount="2499" class="buyBtn mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-medium">Buy</button></div>
+            <div class="bg-[#0f141c] border border-white/10 rounded-2xl p-5 flex flex-col"><div class="text-sm text-gray-400">12 Month</div><div class="text-3xl font-bold mt-1">₹7,999</div><div class="text-[11px] text-emerald-400">Best Value</div><ul class="text-xs text-gray-400 mt-3 space-y-1.5 flex-1"><li>• Unlimited PDFs</li><li>• White-label</li></ul><button data-plan="12 Month" data-amount="7999" class="buyBtn mt-4 w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-medium">Buy</button></div>
+            <div class="bg-gradient-to-b from-violet-950/40 to-[#0f141c] border border-violet-500/30 rounded-2xl p-5 flex flex-col"><div class="text-sm text-violet-300">Universal</div><div class="text-3xl font-bold mt-1">₹4,999</div><div class="text-[11px] text-violet-300">Lifetime</div><ul class="text-xs text-gray-300 mt-3 space-y-1.5 flex-1"><li>• Lifetime access</li><li>• All future updates</li></ul><button data-plan="Universal Lifetime" data-amount="4999" class="buyBtn mt-4 w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm font-semibold">Buy Lifetime</button></div>
+          </div>
+          <div class="mt-8 bg-[#0f141c] border border-white/5 rounded-2xl p-5 max-w-2xl">
+            <h3 class="font-semibold mb-2 flex items-center gap-2"><i class="ri-qr-code-line text-cyan-400"></i> UPI Payment Details</h3>
+            <div class="flex items-center gap-4">
+              <div class="font-mono text-lg bg-[#080b11] px-4 py-2 rounded-xl border border-white/10">muhammerihan7775@oksbi</div>
+              <button id="copyUpi" class="px-3 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs border border-white/10">Copy</button>
+            </div>
+            <p class="text-xs text-gray-500 mt-3">After payment, upload screenshot in the payment modal. Admin will verify within 5 minutes.</p>
+          </div>
+        </div>
+
+        <!-- CLIENTS -->
+        <div id="tab-clients" class="tab-pane">
+          <div class="flex items-center justify-between mb-6">
+            <div><h2 class="text-2xl font-bold">Clients</h2><p class="text-gray-400 text-sm mt-0.5">White-label unlimited access</p></div>
+            <button id="addClientBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-medium flex items-center gap-1.5"><i class="ri-add-line"></i> New Client</button>
+          </div>
+          <div class="bg-[#0f141c] border border-white/5 rounded-2xl overflow-hidden">
+            <div class="overflow-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-white/[0.03] text-gray-400"><tr><th class="text-left px-4 py-3 font-medium">Client</th><th class="text-left px-4 py-3 font-medium">Email</th><th class="text-left px-4 py-3 font-medium">Plan</th><th class="text-left px-4 py-3 font-medium">Link</th><th class="text-left px-4 py-3 font-medium">Created</th></tr></thead>
+                <tbody id="clientsTable" class="divide-y divide-white/5"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVITY -->
+        <div id="tab-activity" class="tab-pane">
+          <h2 class="text-2xl font-bold mb-1">Activity Log</h2>
+          <p class="text-gray-400 text-sm mb-6">Recent actions across the platform</p>
+          <div id="activityList" class="space-y-2"></div>
+        </div>
+
+        <!-- BRANDING AI -->
+        <div id="tab-branding" class="tab-pane">
+          <h2 class="text-2xl font-bold mb-1">Branding AI</h2>
+          <p class="text-gray-400 text-sm mb-6">Generate client brand kits instantly</p>
+          <div class="grid lg:grid-cols-2 gap-5">
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <label class="text-sm text-gray-300">Brand Name</label>
+              <div class="flex gap-2 mt-1.5">
+                <input id="brandName" placeholder="Acme Sports" class="flex-1 bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+                <button id="genBrand" class="px-4 bg-violet-600 hover:bg-violet-500 rounded-xl text-sm font-medium">Generate</button>
+              </div>
+              <div id="brandOutput" class="mt-5 hidden">
+                <div class="grid grid-cols-5 gap-2 mb-4" id="palette"></div>
+                <div class="text-xs text-gray-400">Suggested tagline: <span id="tagline" class="text-gray-200"></span></div>
+              </div>
+            </div>
+            <div class="bg-[#0f141c] border border-white/5 rounded-2xl p-5">
+              <h3 class="font-semibold mb-3">White-label Tips</h3>
+              <ul class="text-sm text-gray-300 space-y-2">
+                <li>• Use ?client=NAME for instant unlimited mode</li>
+                <li>• Upload logo PNG with transparent background</li>
+                <li>• Keep jersey templates at 4500×5400px (300 DPI)</li>
+                <li>• Blue stripes auto-applied for print bleed</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div id="paymentModal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-[#0f141c] border border-white/10 rounded-[24px] w-full max-w-lg shadow-2xl">
+    <div class="p-6 border-b border-white/5 flex items-center justify-between">
+      <div>
+        <h3 class="text-xl font-bold">Complete Payment</h3>
+        <p class="text-xs text-gray-400 mt-0.5"><span id="payPlan">Plan</span> • <span id="payAmount">₹0</span></p>
+      </div>
+      <button id="closePay" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center"><i class="ri-close-line"></i></button>
+    </div>
+    <div class="p-6">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="text-center">
+          <div class="bg-white p-3 rounded-2xl inline-block">
+            <div id="qrcode" class="w-[180px] h-[180px] flex items-center justify-center"></div>
+          </div>
+          <div class="mt-3">
+            <div class="text-[11px] text-gray-500">UPI ID</div>
+            <div class="font-mono text-sm">muhammerihan7775@oksbi</div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-gray-400">UTR / Transaction ID</label>
+            <input id="utrInput" placeholder="Enter 12-digit UTR" class="w-full mt-1 bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">Payment Screenshot</label>
+            <input id="screenshotInput" type="file" accept="image/*" class="w-full mt-1 bg-[#080b11] border border-white/10 rounded-xl px-3 py-2 text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-white/10 file:text-white">
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">Your Email</label>
+            <input id="payerEmail" type="email" placeholder="for activation" class="w-full mt-1 bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+          </div>
+          <button id="submitPayment" class="w-full bg-emerald-600 hover:bg-emerald-500 font-semibold py-3 rounded-xl mt-2 flex items-center justify-center gap-2"><i class="ri-check-line"></i> Submit for Verification</button>
+          <p class="text-[11px] text-gray-500 text-center">Admin gets instant browser notification</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT MODAL -->
+<div id="clientModal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-[#0f141c] border border-white/10 rounded-2xl w-full max-w-md p-6">
+    <h3 class="text-lg font-bold mb-4">Add New Client</h3>
+    <div class="space-y-3">
+      <input id="newClientName" placeholder="Client / Brand Name" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+      <input id="newClientEmail" placeholder="Email" type="email" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+      <input id="newClientPass" placeholder="Password" type="text" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+      <select id="newClientPlan" class="w-full bg-[#080b11] border border-white/10 rounded-xl px-3 py-2.5 text-sm">
+        <option>1 Month - ₹999</option><option>3 Month - ₹2499</option><option>12 Month - ₹7999</option><option>Universal - ₹4999</option>
+      </select>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button id="cancelClient" class="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-sm">Cancel</button>
+      <button id="saveClient" class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-medium">Create & Get Link</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ===== CONFIG =====
+  const ADMIN_EMAIL = 'dhub0005@gmail.com';
+  const ADMIN_PASS = 'dhub@0005';
+  const UPI_ID = 'muhammerihan7775@oksbi';
+  
+  // ===== STATE =====
+  let currentUser = null;
+  let isClientMode = false;
+  let templates = {};
+  let players = [];
+  let lastZipBlob = null;
+  let currentPlan = {name:'', amount:0};
+
+  const TABS = [
+    {id:'overview', label:'Overview', icon:'ri-dashboard-line'},
+    {id:'generator', label:'Generator', icon:'ri-file-pdf-2-line'},
+    {id:'codes', label:'Codes', icon:'ri-key-2-line'},
+    {id:'payments', label:'Payments', icon:'ri-secure-payment-line'},
+    {id:'plans', label:'Plans', icon:'ri-vip-crown-line'},
+    {id:'clients', label:'Clients', icon:'ri-team-line'},
+    {id:'activity', label:'Activity', icon:'ri-history-line'},
+    {id:'branding', label:'Branding AI', icon:'ri-sparkling-2-line'},
+  ];
+
+  const FILES = [
+    {key:'front', name:'Front Body', icon:'ri-t-shirt-line'},
+    {key:'back', name:'Back Body', icon:'ri-t-shirt-2-line'},
+    {key:'left', name:'Left Sleeve', icon:'ri-layout-left-line'},
+    {key:'right', name:'Right Sleeve', icon:'ri-layout-right-line'},
+    {key:'collar', name:'Collar', icon:'ri-focus-3-line'},
+    {key:'bodyChart', name:'Body Size Chart', icon:'ri-ruler-2-line'},
+    {key:'sleeveChart', name:'Sleeve Size Chart', icon:'ri-ruler-line'},
+  ];
+
+  // ===== UTILS =====
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+  const store = {
+    get:k=>JSON.parse(localStorage.getItem(k)||'[]'),
+    set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+    push:(k,v)=>{const a=store.get(k);a.unshift(v);store.set(k,a);return a}
+  };
+  function showToast(msg,type='info'){
+    const colors={success:'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',error:'border-red-500/30 bg-red-500/10 text-red-300',info:'border-blue-500/30 bg-blue-500/10 text-blue-300'};
+    const icons={success:'ri-check-line',error:'ri-error-warning-line',info:'ri-information-line'};
+    const el=document.createElement('div');
+    el.className=`toast border ${colors[type]} backdrop-blur-xl rounded-xl px-4 py-3 shadow-2xl flex items-center gap-2.5 text-sm`;
+    el.innerHTML=`<i class="${icons[type]} text-lg"></i><span>${msg}</span>`;
+    $('#toastContainer').appendChild(el);
+    setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(20px)';setTimeout(()=>el.remove(),300)},3500);
+  }
+  function addActivity(m){ store.push('b7_activity',{t:Date.now(),m}); renderActivity(); }
+  function fmt(n){ return '₹'+Number(n||0).toLocaleString('en-IN') }
+  function sanitize(s){ return String(s||'player').replace(/[^a-z0-9_-]/gi,'_').slice(0,40) }
+  function dataURLtoBlob(dataURL){ const p=dataURL.split(','), m=p[0].match(/:(.*?);/)[1], b=atob(p[1]), u=new Uint8Array(b.length); for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i); return new Blob([u],{type:m}) }
+
+  // ===== INIT =====
+  function init(){
+    // Build nav
+    $('#navTabs').innerHTML = TABS.map(t=>`
+      <button data-tab="${t.id}" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.05] text-gray-300 hover:text-white transition text-[14px]">
+        <i class="${t.icon} text-[18px] opacity-80"></i><span>${t.label}</span>
+      </button>`).join('');
+    $$('.nav-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+    $$('.goto-btn').forEach(b=>b.onclick=()=>switchTab(b.dataset.goto));
+
+    // File grid
+    $('#fileGrid').innerHTML = FILES.map(f=>`
+      <label class="group relative flex items-center gap-3 p-3.5 bg-[#080b11] hover:bg-[#0c111a] border border-white/10 hover:border-white/20 rounded-xl cursor-pointer transition">
+        <input type="checkbox" data-key="${f.key}" class="file-check absolute top-2.5 right-2.5 w-4 h-4 accent-blue-500" checked>
+        <div class="w-9 h-9 rounded-lg bg-white/5 group-hover:bg-white/10 flex items-center justify-center shrink-0"><i class="${f.icon} text-gray-300"></i></div>
+        <div class="flex-1 min-w-0">
+          <div class="text-[13px] font-medium truncate">${f.name}</div>
+          <div class="text-[11px] text-gray-500">PNG / JPG</div>
+        </div>
+        <input type="file" accept="image/*" data-key="${f.key}" class="file-input absolute inset-0 opacity-0 cursor-pointer">
+      </label>`).join('');
+
+    bindEvents();
+    renderAll();
+    checkRoute();
+  }
+
+  function bindEvents(){
+    $('#loginForm').onsubmit = e=>{ e.preventDefault(); doLogin(); };
+    $('#logoutBtn').onclick = ()=>{ localStorage.removeItem('b7_session'); location.reload(); };
+    $('#excelInput').onchange = e=> handleExcel(e.target.files[0]);
+    $('#selectAllFiles').onclick = ()=>{ $$('.file-check').forEach(c=>c.checked=true); updateCounts(); };
+    $('#clearAllFiles').onclick = ()=>{ $$('.file-check').forEach(c=>c.checked=false); updateCounts(); };
+    $$('.file-input').forEach(i=> i.onchange = ev=> loadTemplate(ev));
+    $$('.file-check').forEach(c=> c.onchange = updateCounts);
+    $('#generateBtn').onclick = generatePDFs;
+    $('#downloadZipBtn').onclick = redownload;
+    $('#clearPlayers').onclick = ()=>{ players=[]; renderPlayers(); };
+    $('#createCodeBtn').onclick = createCode;
+    $('#copyUpi').onclick = ()=>{ navigator.clipboard.writeText(UPI_ID); showToast('UPI ID copied','success') };
+    $$('.buyBtn').forEach(b=> b.onclick=()=> openPayment(b.dataset.plan, +b.dataset.amount));
+    $('#closePay').onclick = ()=> $('#paymentModal').classList.add('hidden');
+    $('#submitPayment').onclick = submitPayment;
+    $('#addClientBtn').onclick = ()=> $('#clientModal').classList.remove('hidden');
+    $('#cancelClient').onclick = ()=> $('#clientModal').classList.add('hidden');
+    $('#saveClient').onclick = saveClient;
+    $('#genBrand').onclick = generateBrand;
+
+    // drag drop
+    const drop = $('#excelInput').parentElement;
+    drop.ondragover = e=>{e.preventDefault(); drop.classList.add('border-blue-500/70')};
+    drop.ondragleave = ()=> drop.classList.remove('border-blue-500/70');
+    drop.ondrop = e=>{ e.preventDefault(); drop.classList.remove('border-blue-500/70'); const f=e.dataTransfer.files[0]; if(f) handleExcel(f) };
+  }
+
+  function checkRoute(){
+    const p = new URLSearchParams(location.search);
+    if(p.has('client')){
+      isClientMode = true;
+      $('#loginScreen').classList.add('hidden');
+      $('#app').classList.remove('hidden');
+      $('#sidebar').classList.add('hidden');
+      $('#clientBanner').classList.remove('hidden');
+      $('#clientName').textContent = p.get('client');
+      $('#sidebarSubtitle').textContent = 'Client Mode';
+      switchTab('generator');
+      addActivity(`Client workspace opened: ${p.get('client')}`);
+      return;
+    }
+    const sess = localStorage.getItem('b7_session');
+    if(sess){
+      currentUser = sess==='admin'? {email:ADMIN_EMAIL,role:'admin'} : JSON.parse(sess);
+      showApp();
+    }
+  }
+
+  function doLogin(){
+    const email = $('#email').value.trim().toLowerCase();
+    const pass = $('#password').value;
+    if(email===ADMIN_EMAIL && pass===ADMIN_PASS){
+      localStorage.setItem('b7_session','admin');
+      currentUser={email,role:'admin'};
+      if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+      showApp();
+      addActivity('Admin login');
+      showToast('Welcome back, Admin','success');
+      return;
+    }
+    const users = store.get('b7_users');
+    const u = users.find(x=>x.email===email && x.pass===pass);
+    if(u){
+      localStorage.setItem('b7_session',JSON.stringify(u));
+      currentUser=u; showApp(); showToast('Signed in','success'); addActivity(`User login: ${email}`);
+    } else { showToast('Invalid credentials','error') }
+  }
+
+  function showApp(){
+    $('#loginScreen').classList.add('hidden');
+    $('#app').classList.remove('hidden');
+    $('#currentUserEmail').textContent = currentUser?.email || '—';
+    switchTab('overview');
+    renderAll();
+  }
+
+  function switchTab(id){
+    $$('.tab-pane').forEach(p=>p.classList.remove('active'));
+    $('#tab-'+id)?.classList.add('active');
+    $$('.nav-btn').forEach(b=> b.classList.toggle('bg-white/10', b.dataset.tab===id));
+  }
+
+  // ===== EXCEL PARSER (FIX) =====
+  async function handleExcel(file){
+    if(!file) return;
+    try{
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf,{type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      let headerRow = 0;
+      const maxScan = Math.min(30, rows.length);
+      for(let i=0;i<maxScan;i++){
+        const r = (rows[i]||[]).map(v=> String(v||'').toLowerCase().trim());
+        const hasName = r.some(c=>c.includes('name'));
+        const hasNum = r.some(c=>c.includes('number')|| /\bno\b/.test(c) || c.includes('no.'));
+        const hasSize = r.some(c=>c.includes('size'));
+        const score = [hasName,hasNum,hasSize].filter(Boolean).length;
+        if(score>=2){ headerRow=i; break; }
+      }
+      showToast(`Found header at row ${headerRow+1}`,'success');
+      $('#excelStatus').classList.remove('hidden');
+      $('#excelStatus').textContent = `Header detected at row ${headerRow+1} • ${rows.length-headerRow-1} records`;
+      
+      const data = XLSX.utils.sheet_to_json(ws,{range:headerRow,defval:''});
+      players = data.map(row=>{
+        const keys = Object.keys(row);
+        const find = kws => keys.find(k=> kws.some(kw=> String(k).toLowerCase().includes(kw)));
+        return {
+          name: row[find(['name','player'])] || '',
+          number: row[find(['number','no','jersey'])] || '',
+          size: row[find(['size','sz'])] || ''
+        }
+      }).filter(p=> p.name || p.number);
+      renderPlayers();
+      updateCounts();
+      addActivity(`Excel parsed: ${players.length} players`);
+      if(players.length===0) showToast('No valid rows found. Check Name/Number/Size columns','error');
+    }catch(e){ console.error(e); showToast('Failed to read Excel','error') }
+  }
+
+  function loadTemplate(ev){
+    const file = ev.target.files[0]; if(!file) return;
+    const key = ev.target.dataset.key;
+    const rd = new FileReader();
+    rd.onload = e=>{ templates[key]=e.target.result; showToast(`${FILES.find(f=>f.key===key).name} loaded`,'success'); updateCounts(); };
+    rd.readAsDataURL(file);
+  }
+
+  function renderPlayers(){
+    const tb = $('#playerTable');
+    tb.innerHTML = players.map(p=>`<tr class="hover:bg-white/[0.02]"><td class="px-3 py-2">${p.name||'—'}</td><td class="px-3 py-2">${p.number||'—'}</td><td class="px-3 py-2">${p.size||'—'}</td></tr>`).join('');
+    $('#playerCount').textContent = players.length;
+    $('#plyCount').textContent = players.length;
+    $('#emptyPlayers').classList.toggle('hidden', players.length>0);
+    $('#generateBtn').disabled = players.length===0;
+  }
+
+  function updateCounts(){
+    const sel = $$('.file-check:checked').length;
+    $('#tplCount').textContent = `${sel}/7`;
+    $('#generateText').textContent = `Generate PDFs (${sel} templates)`;
+    $('#generateBtn').disabled = players.length===0 || sel===0;
+  }
+
+  // ===== PDF GENERATION =====
+  async function generatePDFs(){
+    if(players.length===0) return;
+    const { jsPDF } = window.jspdf;
+    const zip = new JSZip();
+    let count = 0;
+    $('#generateBtn').disabled = true;
+    $('#generateBtn').innerHTML = `<i class="ri-loader-4-line animate-spin"></i> Rendering...`;
+
+    const selected = {};
+    $$('.file-check:checked').forEach(c=> { const k=c.dataset.key; if(templates[k]) selected[k]=templates[k]; });
+
+    for(const p of players){
+      const pdf = new jsPDF({orientation:'landscape', unit:'mm', format:'a4', compress:true});
+      const addStripes = ()=>{
+        pdf.setFillColor(37,99,235); pdf.rect(0,0,297,10,'F'); pdf.rect(0,200,297,10,'F');
+        pdf.setTextColor(255); pdf.setFontSize(9); pdf.text('Bupreme v7 • 300 DPI Print Ready', 148.5, 6.5, {align:'center'});
+      };
+      // Page 1 - Front
+      addStripes();
+      if(selected.front){
+        try{ pdf.addImage(selected.front,'PNG',12,16,130,174,undefined,'FAST'); }catch{}
+      }
+      pdf.setTextColor(15,23,42); pdf.setFont('helvetica','bold'); pdf.setFontSize(26);
+      pdf.text(String(p.name||'PLAYER').toUpperCase(), 155, 65);
+      pdf.setFontSize(52); pdf.text(String(p.number||'00'), 155, 100);
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(18); pdf.text(`SIZE: ${p.size||'M'}`, 155, 125);
+      if(selected.left) { try{ pdf.addImage(selected.left,'PNG',250,18,35,45,undefined,'FAST'); }catch{} }
+      if(selected.right){ try{ pdf.addImage(selected.right,'PNG',250,70,35,45,undefined,'FAST'); }catch{} }
+      // Page 2 - Back
+      pdf.addPage(); addStripes();
+      if(selected.back){
+        try{ pdf.addImage(selected.back,'PNG',12,16,130,174,undefined,'FAST'); }catch{}
+      } else if(selected.front){
+        try{ pdf.addImage(selected.front,'PNG',12,16,130,174,undefined,'FAST'); }catch{}
+      }
+      pdf.setTextColor(15,23,42); pdf.setFont('helvetica','bold'); pdf.setFontSize(24);
+      pdf.text(String(p.name||'').toUpperCase(), 155, 70);
+      pdf.setFontSize(44); pdf.text(String(p.number||''),155,100);
+      if(selected.collar){ try{ pdf.addImage(selected.collar,'PNG',200,130,60,30,undefined,'FAST'); }catch{} }
+
+      const blob = pdf.output('blob');
+      zip.file(`${sanitize(p.name)}_${sanitize(p.number)}.pdf`, blob);
+      count++;
+    }
+
+    // Add size charts
+    if(selected.bodyChart) zip.file('Body-Size-Chart.png', dataURLtoBlob(selected.bodyChart));
+    if(selected.sleeveChart) zip.file('Sleeve-Size-Chart.png', dataURLtoBlob(selected.sleeveChart));
+
+    const zipBlob = await zip.generateAsync({type:'blob'});
+    lastZipBlob = zipBlob;
+    window.lastZipBlob = zipBlob;
+
+    // Auto-start download
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a'); a.href=url; a.download=`Bupreme-v7-Jerseys-${Date.now()}.zip`; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+
+    $('#downloadContainer').classList.remove('hidden');
+    $('#generateBtn').disabled = false;
+    $('#generateBtn').innerHTML = `<i class="ri-flashlight-line"></i> <span id="generateText">Generate PDFs</span>`;
+    updateCounts();
+
+    showToast(`✅ ${count} PDFs generated • ZIP downloaded`,'success');
+    addActivity(`Generated ${count} PDFs`);
+    $('#statPDF').textContent = (+$('#statPDF').textContent + count).toString();
+  }
+
+  function redownload(){
+    if(!lastZipBlob){ showToast('Generate first','error'); return; }
+    const url = URL.createObjectURL(lastZipBlob);
+    const a = document.createElement('a'); a.href=url; a.download='Bupreme-v7-ReDownload.zip'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    showToast('ZIP re-downloaded','success');
+  }
+
+  // ===== PAYMENTS =====
+  function openPayment(plan, amount){
+    currentPlan = {name:plan, amount};
+    $('#payPlan').textContent = plan;
+    $('#payAmount').textContent = fmt(amount);
+    $('#qrcode').innerHTML='';
+    const upi = `upi://pay?pa=${UPI_ID}&pn=Bupreme&am=${amount}&cu=INR&tn=${encodeURIComponent('Bupreme '+plan)}`;
+    new QRCode($('#qrcode'), {text:upi, width:180, height:180, colorDark:'#000000', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.H});
+    $('#paymentModal').classList.remove('hidden');
+    $('#payerEmail').value = currentUser?.email || '';
+  }
+
+  async function submitPayment(){
+    const utr = $('#utrInput').value.trim();
+    const email = $('#payerEmail').value.trim();
+    const file = $('#screenshotInput').files[0];
+    if(!utr || !email || !file){ showToast('Fill UTR, email & screenshot','error'); return; }
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const pay = { id:'PAY'+Date.now(), date:new Date().toISOString(), plan:currentPlan.name, amount:currentPlan.amount, utr, email, screenshot:e.target.result, status:'pending' };
+      store.push('b7_payments', pay);
+      $('#paymentModal').classList.add('hidden');
+      showToast('Payment submitted • Verifying','success');
+      addActivity(`New payment: ${currentPlan.name} ${fmt(currentPlan.amount)}`);
+      renderPayments();
+      // Browser notification for admin
+      if('Notification' in window && Notification.permission==='granted'){
+        new Notification('Bupreme v7 - New Payment', { body:`${currentPlan.name} • ${fmt(currentPlan.amount)} • UTR ${utr}`, icon:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f4b0.png' });
+      }
+      $('#statPending').textContent = store.get('b7_payments').filter(p=>p.status==='pending').length;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ===== CODES / CLIENTS / RENDERS =====
+  function createCode(){
+    const plan = $('#codePlan').value;
+    const client = $('#codeClient').value.trim();
+    const code = 'BP7-'+Math.random().toString(36).slice(2,6).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+    store.push('b7_codes',{code,plan,client,status:'active',created:Date.now()});
+    showToast(`Code created: ${code}`,'success'); addActivity(`Code ${code} (${plan})`); renderCodes();
+  }
+
+  function saveClient(){
+    const name = $('#newClientName').value.trim();
+    const email = $('#newClientEmail').value.trim().toLowerCase();
+    const pass = $('#newClientPass').value.trim();
+    const plan = $('#newClientPlan').value;
+    if(!name || !email || !pass){ showToast('Fill all fields','error'); return; }
+    const users = store.get('b7_users');
+    if(users.find(u=>u.email===email)){ showToast('Email exists','error'); return; }
+    users.push({name,email,pass,plan,created:Date.now()}); store.set('b7_users',users);
+    $('#clientModal').classList.add('hidden');
+    const link = `${location.origin}${location.pathname}?client=${encodeURIComponent(name)}`;
+    navigator.clipboard.writeText(link);
+    showToast('Client created • Link copied','success'); addActivity(`Client added: ${name}`); renderClients();
+  }
+
+  function generateBrand(){
+    const name = $('#brandName').value.trim()||'Bupreme';
+    const hash = [...name].reduce((a,c)=>a+c.charCodeAt(0),0);
+    const hues = [ (hash*37)%360, (hash*73)%360, (hash*101)%360, (hash*151)%360, (hash*193)%360 ];
+    $('#palette').innerHTML = hues.map(h=>`<div class="h-12 rounded-lg border-white/10" style="background:hsl(${h} 80% 55%)"></div>`).join('');
+    $('#tagline').textContent = `${name} — Engineered for Champions`;
+    $('#brandOutput').classList.remove('hidden');
+    addActivity(`Branding generated: ${name}`);
+  }
+
+  function renderAll(){
+    renderPlayers(); updateCounts(); renderCodes(); renderPayments(); renderClients(); renderActivity();
+    $('#statClients').textContent = store.get('b7_users').length;
+    const rev = store.get('b7_payments').filter(p=>p.status!=='rejected').reduce((s,p)=>s+p.amount,0);
+    $('#statRevenue').textContent = fmt(rev);
+    $('#statPending').textContent = store.get('b7_payments').filter(p=>p.status==='pending').length;
+  }
+  function renderCodes(){
+    const rows = store.get('b7_codes').slice(0,50);
+    $('#codesTable').innerHTML = rows.map(c=>`<tr><td class="px-2 py-2 font-mono text-xs">${c.code}</td><td class="px-2 py-2">${c.plan}</td><td class="px-2 py-2">${c.client||'—'}</td><td class="px-2 py-2"><span class="px-2 py-0.5 rounded text-[11px] ${c.status==='active'?'bg-emerald-500/15 text-emerald-300':'bg-gray-500/15 text-gray-300'}">${c.status}</span></td></tr>`).join('') || `<tr><td colspan="4" class="text-center py-6 text-gray-500">No codes yet</td></tr>`;
+  }
+  function renderPayments(){
+    const rows = store.get('b7_payments');
+    $('#paymentsTable').innerHTML = rows.map(p=>`
+      <tr class="hover:bg-white/[0.02]">
+        <td class="px-4 py-2.5 text-xs text-gray-400">${new Date(p.date).toLocaleString()}</td>
+        <td class="px-4 py-2.5">${p.plan}</td>
+        <td class="px-4 py-2.5 font-medium">${fmt(p.amount)}</td>
+        <td class="px-4 py-2.5 font-mono text-xs">${p.utr}</td>
+        <td class="px-4 py-2.5"><span class="px-2 py-1 rounded-lg text-[11px] ${p.status==='pending'?'bg-amber-500/15 text-amber-300 border border-amber-500/20':'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20'}">${p.status}</span></td>
+        <td class="px-4 py-2.5"><button onclick="window.open('${p.screenshot}','_blank')" class="text-blue-400 hover:underline text-xs">View</button></td>
+      </tr>`).join('') || `<tr><td colspan="6" class="text-center py-10 text-gray-500">No payments yet</td></tr>`;
+  }
+  function renderClients(){
+    const rows = store.get('b7_users');
+    $('#clientsTable').innerHTML = rows.map(u=>`
+      <tr class="hover:bg-white/[0.02]">
+        <td class="px-4 py-2.5 font-medium">${u.name}</td>
+        <td class="px-4 py-2.5 text-gray-300">${u.email}</td>
+        <td class="px-4 py-2.5 text-xs">${u.plan}</td>
+        <td class="px-4 py-2.5"><a href="?client=${encodeURIComponent(u.name)}" target="_blank" class="text-cyan-400 hover:underline text-xs">Open Workspace</a></td>
+        <td class="px-4 py-2.5 text-xs text-gray-500">${new Date(u.created).toLocaleDateString()}</td>
+      </tr>`).join('') || `<tr><td colspan="5" class="text-center py-10 text-gray-500">No clients yet</td></tr>`;
+  }
+  function renderActivity(){
+    const acts = store.get('b7_activity').slice(0,40);
+    $('#activityList').innerHTML = acts.map(a=>`
+      <div class="flex items-center gap-3 p-3 bg-[#0f141c] border border-white/5 rounded-xl">
+        <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0"><i class="ri-pulse-line text-gray-400"></i></div>
+        <div class="flex-1 min-w-0"><div class="text-sm truncate">${a.m}</div><div class="text-[11px] text-gray-500">${new Date(a.t).toLocaleString()}</div></div>
+      </div>`).join('') || `<div class="text-center py-10 text-gray-500 text-sm">No activity yet</div>`;
+  }
+
+  // Start
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
